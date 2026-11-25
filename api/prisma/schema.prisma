@@ -1,0 +1,58 @@
+generator client {
+  provider = "prisma-client"
+  output = "../src/generated/prisma"
+  moduleFormat = "esm"
+  importFileExtension = "js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Book {
+  id          String   @id @default(uuid()) @db.Uuid
+  owner       String
+  identity    String
+  workKey     String?
+  editionKey  String?
+  title       String
+  author      String
+  coverUrl    String?
+  status      String   @default("want")
+  tags        String[] @default([])
+  plannedYears Int[]   @default([])
+  revision    Int      @default(1)
+  createdAt   DateTime @default(now())
+  readings    Reading[]
+
+  @@unique([owner, identity])
+  @@index([owner, createdAt])
+}
+
+model Reading {
+  bookId   String  @db.Uuid
+  id       String  @db.Uuid
+  position Int
+  format   String
+  days     String[] @default([])
+  finished String?
+  rating   Float?
+  favorite Boolean
+  review   String
+  book     Book    @relation(fields: [bookId], references: [id], onDelete: Cascade)
+
+  @@id([bookId, id])
+}
+
+model JournalYear {
+  owner    String
+  year     Int
+  revision Int   @default(1)
+  squares  Json
+  letters  Json
+  colors   Json
+  monthly  Json
+  rounds   Json
+
+  @@id([owner, year])
+}
