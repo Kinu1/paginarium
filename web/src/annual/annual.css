@@ -1,0 +1,31 @@
+.annual { color:#14263a; position:relative; }
+.annual button,.annual select {font:inherit}
+.an-year label,.an-picker label,.an-months label {display:grid;gap:.45rem;font-size:.9rem;font-weight:600}
+.an-year {display:flex;justify-content:flex-end;margin-bottom:.5rem}
+.an-year label {display:flex;align-items:center}
+.annual select {border:1px solid #c6c5bd;border-radius:.5rem;background:#fffcf7;padding:.55rem;color:#182b40;max-width:100%}
+.an-tabs {display:flex;flex-wrap:wrap;gap:.4rem;border-bottom:1px solid #d4d1c9;padding-bottom:.7rem}
+.an-tabs button,.an-picker button,.an-round button {padding:.55rem .85rem;border:1px solid #cbc9c1;border-radius:.5rem;cursor:pointer;background:transparent}
+.an-tabs button[aria-pressed=true],.an-round button[aria-pressed=true] {background:#172d42;color:#fff9eb;border-color:#172d42}
+.an-heading {display:flex;align-items:baseline;justify-content:space-between;gap:1rem;margin:1.6rem 0 1rem}
+.an-heading h2,.an-picker h3,.an-round h3 {font:normal 1.65rem Georgia,serif;margin:0}
+.an-heading span {font-size:.85rem;color:#535f68}
+.an-grid {display:grid;gap:.45rem;grid-template-columns:repeat(5,minmax(0,1fr))}
+.an-cell,.an-free {min-height:78px;border:1px solid #d3cec2;border-radius:.5rem;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:.4rem;padding:.5rem;background:#fffdf7;color:#243548}
+.an-cell {cursor:pointer}
+.an-cell strong {font-weight:550;font-size:.92rem;overflow-wrap:anywhere}
+.an-cell.chosen {background:#e4ece5}
+.an-cell small {display:flex;align-items:center;gap:.2rem;max-width:100%;overflow-wrap:anywhere}
+.an-free {background:#14283e;color:#fff8e8}
+.an-free img {height:32px;width:32px;border-radius:.4rem}
+.an-colors {grid-template-columns:repeat(auto-fit,minmax(120px,1fr))}
+.an-colors i {height:2rem;width:2rem;border-radius:50%}
+.an-picker {position:sticky;bottom:1rem;background:#fffdf8;border:1px solid #b8beb9;border-radius:.8rem;box-shadow:0 6px 26px #0b203324;margin:1rem 0;padding:1rem;display:grid;gap:.7rem}
+.an-picker div,.an-round div,.an-winner {display:flex;gap:.6rem;align-items:center;flex-wrap:wrap}
+.an-months {display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:1rem}
+.an-months label {text-transform:capitalize}
+.an-months select,.an-year select {text-transform:none}
+.an-round {margin:1rem 0}
+.an-round div {margin:.5rem 0}
+.an-winner {font:1.4rem Georgia,serif}
+@media(max-width:640px){.an-picker{bottom:5rem}.an-squares{gap:3px}.an-squares .an-cell,.an-free{padding:.28rem .12rem;min-height:64px}.an-squares .an-cell strong{font-size:.76rem}.an-letters{grid-template-columns:repeat(4,minmax(0,1fr))}}
