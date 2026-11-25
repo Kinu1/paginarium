@@ -1,0 +1,16 @@
+node_modules/
+dist/
+coverage/
+.qa/
+.env
+.env.*
+!.env.example
+!.env.*.example
+.firebase/
+firebase-debug*.log
+ui-debug.log
+*.tsbuildinfo
+playwright-report/
+test-results/
+.vite/
+*.dump
