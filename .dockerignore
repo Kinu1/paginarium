@@ -1,0 +1,14 @@
+**/node_modules
+**/dist
+**/generated
+**/test-results
+**/playwright-report
+**/firebase-debug.log*
+**/.env
+**/.env.*
+.env
+.env.*
+.git
+.qa
+.firebase
+artifacts

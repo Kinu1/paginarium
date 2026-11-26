@@ -1,0 +1,88 @@
+name: paginarium
+
+services:
+  db:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: paginarium
+      POSTGRES_PASSWORD: paginarium_local
+      POSTGRES_DB: paginarium
+    volumes:
+      - banco:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U paginarium -d paginarium"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  auth:
+    build:
+      context: .
+      dockerfile: infra/auth.Dockerfile
+    init: true
+    ports:
+      - "127.0.0.1:9099:9099"
+    volumes:
+      - contas:/dados
+    stop_signal: SIGINT
+    stop_grace_period: 30s
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:9099/').then(() => process.exit(0), () => process.exit(1))"]
+      interval: 5s
+      timeout: 4s
+      retries: 30
+
+  api:
+    build:
+      context: .
+      dockerfile: api/Dockerfile
+    init: true
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgresql://paginarium:paginarium_local@db:5432/paginarium
+      FIREBASE_PROJECT_ID: demo-paginarium
+      FIREBASE_AUTH_EMULATOR_HOST: auth:9099
+      WEB_ORIGIN: http://localhost:5173,http://127.0.0.1:5173
+      PORT: 3000
+    ports:
+      - "127.0.0.1:3000:3000"
+    depends_on:
+      db: { condition: service_healthy }
+      auth: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/api/health').then(r => process.exit(r.ok ? 0 : 1), () => process.exit(1))"]
+      interval: 5s
+      timeout: 4s
+      retries: 25
+    develop:
+      watch:
+        - { action: rebuild, path: ./api/src, ignore: [generated/] }
+        - { action: rebuild, path: ./api/prisma }
+        - { action: rebuild, path: ./api/package-lock.json }
+
+  web:
+    build:
+      context: .
+      dockerfile: web/Dockerfile
+    init: true
+    environment:
+      VITE_API_URL: http://localhost:3000/api
+      VITE_FIREBASE_API_KEY: demo-local-paginarium
+      VITE_FIREBASE_AUTH_DOMAIN: demo-paginarium.firebaseapp.com
+      VITE_FIREBASE_PROJECT_ID: demo-paginarium
+      VITE_FIREBASE_APP_ID: 1:123456789:web:paginariumlocal
+      VITE_AUTH_EMULATOR_URL: http://localhost:9099
+    ports:
+      - "127.0.0.1:5173:5173"
+    depends_on:
+      api: { condition: service_healthy }
+    develop:
+      watch:
+        - { action: sync, path: ./web/src, target: /app/web/src }
+        - { action: sync, path: ./web/public, target: /app/web/public }
+        - { action: sync, path: ./shared, target: /app/shared }
+        - { action: rebuild, path: ./web/package-lock.json }
+
+volumes:
+  banco:
+  contas:
