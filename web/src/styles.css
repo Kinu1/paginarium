@@ -412,6 +412,14 @@ h1:focus {
 .section-title {
   gap: 9px;
 }
+.shelf-heading, .shelf-options {
+  flex-wrap: wrap;
+}
+.shelf-options {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
 .section-title h2 {
   font: 400 clamp(30px, 2.6vw, 42px)/1.1 var(--serif);
   letter-spacing: -0.035em;
