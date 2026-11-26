@@ -2,6 +2,8 @@
 
 ## Convite para a Laryssa
 
+[Abrir o beta](https://paginarium-kinu1.web.app). Toque em **Entrar na minha conta** para começar sua própria estante.
+
 Laryssa, monte uma estante com dez livros que você conhece. Procure cada título como procuraria normalmente e repare se reconhece a capa da sua edição. Escolha um livro para registrar como lido, dê uma nota com meia lua, escreva uma resenha curta e veja se consegue encontrá-la outra vez no celular.
 
 ## O que observar
