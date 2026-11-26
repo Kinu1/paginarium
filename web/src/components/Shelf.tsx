@@ -44,7 +44,10 @@ export function Shelf({
   const [status, setStatus] = useState<Status | 'all'>('all')
   const [order, setOrder] = useState<'shelf' | 'az' | 'za'>('shelf')
   const [keyword, setKeyword] = useState('')
-  const year = new Date().getFullYear()
+  const currentYear = new Date().getFullYear()
+  const [year, setYear] = useState(currentYear)
+  const plannedYears = [...new Set([currentYear, year, ...books.flatMap((book) => book.plannedYears)])]
+    .sort((a, b) => b - a)
   const inScope = books.filter(
     (book) =>
       scope === 'all' ||
@@ -102,24 +105,35 @@ export function Shelf({
         </section>
       )}
       <section className="shelf-section" aria-labelledby="shelf-books-heading">
-        <div className="section-line">
+        <div className="section-line shelf-heading">
           <div className="section-title">
             <h2 id="shelf-books-heading">{scopes[scope]}</h2>
             <span>{inScope.length}</span>
           </div>
-          <label className="sort-control">
-            <span>Ordenar</span>
-            <select
-              aria-label="Ordenar livros"
-              value={order}
-              onChange={(e) => setOrder(e.target.value as typeof order)}
-            >
-              <option value="shelf">Da estante</option>
-              <option value="az">Título A–Z</option>
-              <option value="za">Título Z–A</option>
-            </select>
-            <ChevronDown size={14} />
-          </label>
+          <div className="shelf-options">
+            {scope === 'planned' && (
+              <label className="sort-control">
+                <span>Ano</span>
+                <select aria-label="Ano da lista de leitura" value={year} onChange={(e) => setYear(Number(e.target.value))}>
+                  {plannedYears.map((item) => <option key={item} value={item}>{item}</option>)}
+                </select>
+                <ChevronDown size={14} />
+              </label>
+            )}
+            <label className="sort-control">
+              <span>Ordenar</span>
+              <select
+                aria-label="Ordenar livros"
+                value={order}
+                onChange={(e) => setOrder(e.target.value as typeof order)}
+              >
+                <option value="shelf">Da estante</option>
+                <option value="az">Título A–Z</option>
+                <option value="za">Título Z–A</option>
+              </select>
+              <ChevronDown size={14} />
+            </label>
+          </div>
         </div>
         <div className="shelf-tools">
           <div className="status-tabs" aria-label="Filtrar por status">
