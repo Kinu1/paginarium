@@ -2,6 +2,8 @@
 
 Diário de leitura em português para organizar livros pelas capas. Cada pessoa tem uma estante privada, acessível no computador e no celular. Uma releitura guarda datas, formato, nota e resenha próprios e conta uma única vez no total de obras do ano.
 
+[Abrir o Paginarium](https://paginarium-kinu1.web.app). Explore a estante de demonstração ou entre para buscar edições e salvar suas leituras em uma conta privada.
+
 ![Demonstração do Paginarium. Busca de uma edição, inclusão na estante e avaliação com quatro luas e meia.](docs/demonstracao.gif)
 
 A demonstração usa livros, autorias e resenhas fictícios. As ilustrações das capas vêm do acervo aberto do Cleveland Museum of Art. [Créditos das capas](web/public/capas/creditos.txt) · [Estante no celular](docs/estante-mobile.png)
