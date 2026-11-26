@@ -1,6 +1,7 @@
 import {
   HttpException,
   Injectable,
+  Logger,
   ServiceUnavailableException,
 } from "@nestjs/common";
 
@@ -71,6 +72,7 @@ export function searchResults(docs: Work[]): CatalogBook[] {
 
 @Injectable()
 export class CatalogService {
+  private readonly logger = new Logger(CatalogService.name);
   private cache = new Map<string, Cached>();
   private ongoing = new Map<string, Promise<CatalogBook[]>>();
   private nextSlot = 0;
@@ -124,22 +126,35 @@ export class CatalogService {
     this.nextSlot = now + wait + 1100;
     const request = (async () => {
       if (wait) await new Promise((resolve) => setTimeout(resolve, wait));
+      const started = Date.now();
       try {
+        const contact = process.env.OPEN_LIBRARY_CONTACT?.trim();
         const response = await fetch("https://openlibrary.org" + path, {
-          signal: AbortSignal.timeout(9000),
+          signal: AbortSignal.timeout(20000),
           headers: {
-            "User-Agent":
-              "Paginarium/1.0 (+https://github.com/Kinu1/paginarium)",
+            "User-Agent": contact
+              ? `Paginarium/1.0 (${contact}; +https://github.com/Kinu1/paginarium)`
+              : "Paginarium/1.0 (+https://github.com/Kinu1/paginarium)",
             Accept: "application/json",
           },
         });
-        if (!response.ok) throw new Error("Open Library");
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const books = convert(await response.json());
         if (this.cache.size >= 160)
           this.cache.delete(this.cache.keys().next().value!);
         this.cache.set(key, { books, until: Date.now() + 10 * 60_000 });
         return books;
-      } catch {
+      } catch (error) {
+        let reason = "Erro de rede";
+        if (error instanceof Error) {
+          reason = /^HTTP \d{3}$/.test(error.message) ? error.message : error.name;
+          const cause = error.cause;
+          if (cause instanceof Error && "code" in cause &&
+              typeof cause.code === "string" && /^[A-Z0-9_]+$/.test(cause.code)) {
+            reason += " " + cause.code;
+          }
+        }
+        this.logger.warn(`Open Library: ${reason} após ${Date.now() - started} ms`);
         throw new ServiceUnavailableException(
           "O catálogo está indisponível. Tente novamente ou adicione o livro manualmente.",
         );
