@@ -3,8 +3,9 @@ import type { Book } from '../../../shared/contracts'
 import { activityByDay, completedByWork, formattedDate, formats, ratingText } from './model'
 import type { HistoryFilter } from './model'
 import { Calendar } from './Calendar'
-import { BookCover } from '../components/BookCover'
 import { Moons } from './MoonRating'
+import { BookCover } from '../components/BookCover'
+import './activity.css'
 
 const monthNames = Array.from({ length: 12 }, (_, n) =>
   new Intl.DateTimeFormat('pt-BR', { month: 'long' }).format(new Date(2020, n, 1)))
@@ -15,27 +16,33 @@ function initialFilter(): HistoryFilter {
   return { year: new Date().getFullYear(), month: '', format: '', tags: [], rating: '', favorite: false }
 }
 
-function AnnualActivity({ books, filter, chooseMonth }: { books: Book[]; filter: HistoryFilter; chooseMonth: (month: string) => void }) {
+function AnnualActivity({ books, filter, chooseDay }: { books: Book[]; filter: HistoryFilter; chooseDay: (day: string) => void }) {
   return <div className="jr-year-activity">{monthNames.map((name, n) => {
     const month = String(n + 1).padStart(2, '0')
     const prefix = filter.year + '-' + month
     const days = activityByDay(books, filter, prefix)
     const total = new Date(filter.year, n + 1, 0).getDate()
-    return <button key={name} type="button" onClick={() => chooseMonth(month)} aria-label={name + ', ' + days.size + ' dias com leitura'}>
-      <span className="jr-mini-title">{name}</span>
-      <span className="jr-mini-grid" aria-hidden="true">
-        {Array.from({ length: new Date(filter.year, n, 1).getDay() }, (_, i) => <i className="pad" key={'p' + i} />)}
-        {Array.from({ length: total }, (_, i) => <i key={i} className={days.has(prefix + '-' + String(i + 1).padStart(2, '0')) ? 'active' : ''} />)}
-      </span>
+    return <section key={name} className="jr-mini-month" aria-label={name}>
+      <h3 className="jr-mini-title">{name}</h3>
+      <div className="jr-mini-grid">
+        {['D','S','T','Q','Q','S','S'].map((letter, index) => <span key={'w'+index} aria-hidden="true">{letter}</span>)}
+        {Array.from({ length: new Date(filter.year, n, 1).getDay() }, (_, i) => <span key={'p' + i} />)}
+        {Array.from({ length: total }, (_, i) => {
+          const date = prefix + '-' + String(i + 1).padStart(2, '0')
+          return days.has(date)
+            ? <button key={date} type="button" aria-label={formattedDate(date) + ', com atividade'} onClick={() => chooseDay(date)}>{i + 1}</button>
+            : <span key={date}>{i + 1}</span>
+        })}
+      </div>
       <small>{days.size} {days.size === 1 ? 'dia' : 'dias'}</small>
-    </button>
+    </section>
   })}</div>
 }
 
-export function History({ books, onOpen }: { books: Book[]; onOpen: OpenBook }) {
+export function History({ books, onOpen, mode, visible }: { books: Book[]; onOpen: OpenBook; mode: 'finished' | 'activity'; visible: boolean }) {
   const [filter, setFilter] = useState<HistoryFilter>(initialFilter)
-  const [mode, setMode] = useState<'finished' | 'activity'>('finished')
   const [activeDay, setActiveDay] = useState('')
+  if (!visible) return null
   const allTags = [...new Set(books.flatMap(book => book.tags))].sort((a, b) => a.localeCompare(b, 'pt-BR'))
   const years = new Set([new Date().getFullYear(), filter.year])
   for (const book of books) for (const r of book.readings) {
@@ -55,13 +62,7 @@ export function History({ books, onOpen }: { books: Book[]; onOpen: OpenBook }) 
   const selectedDay = activeDay || [...activities.keys()].sort().at(-1) || ''
   const dayEntries = activities.get(selectedDay) ?? []
   const filtered = filter.tags.length > 0 || Boolean(filter.rating || filter.format || filter.favorite || filter.month)
-  return <section className="jr-history" aria-label="Histórico de leituras">
-    <header className="jr-history-head">
-      <div className="jr-mode" role="group" aria-label="Visualização do histórico">
-        <button type="button" aria-pressed={mode === 'finished'} onClick={() => setMode('finished')}>Livros lidos</button>
-        <button type="button" aria-pressed={mode === 'activity'} onClick={() => setMode('activity')}>Dias de leitura</button>
-      </div>
-    </header>
+  return <section className="jr-history" aria-label={mode === 'finished' ? 'Conclusões' : 'Atividade de leitura'}>
     <div className="jr-filters">
       <label>Ano<select aria-label="Ano" value={filter.year} onChange={e => update({ year: Number(e.target.value) })}>
         {[...years].sort((a, b) => b - a).map(year => <option key={year}>{year}</option>)}
@@ -69,7 +70,7 @@ export function History({ books, onOpen }: { books: Book[]; onOpen: OpenBook }) 
       <label>Mês<select aria-label="Mês" value={filter.month} onChange={e => update({ month: e.target.value })}>
         <option value="">Ano inteiro</option>{monthNames.map((name, n) => <option key={name} value={String(n + 1).padStart(2, '0')}>{name}</option>)}
       </select></label>
-      <label>Formato<select value={filter.format} onChange={e => update({ format: e.target.value })}>
+      <label>Formato<select aria-label="Formato" value={filter.format} onChange={e => update({ format: e.target.value })}>
         <option value="">Todos</option>{Object.entries(formats).map(([key, text]) => <option value={key} key={key}>{text}</option>)}
       </select></label>
       <label>Avaliação<select aria-label="Avaliação" value={filter.rating} onChange={e => update({ rating: e.target.value })}>
@@ -103,7 +104,7 @@ export function History({ books, onOpen }: { books: Book[]; onOpen: OpenBook }) 
         })}</div>}
     </> : !filter.month ? <>
       <h2 className="jr-results">Atividade em {filter.year}</h2>
-      <AnnualActivity books={books} filter={filter} chooseMonth={month => update({ month })} />
+      <AnnualActivity books={books} filter={filter} chooseDay={day => { update({ month: day.slice(5, 7) }); setActiveDay(day) }} />
     </> : <div className="jr-month-activity">
       <Calendar activity month={monthKey} selected={new Set(activities.keys())} activeDay={selectedDay} onDay={setActiveDay}
         onMonth={month => update({ year: Number(month.slice(0, 4)), month: month.slice(5) })} />

@@ -71,7 +71,7 @@ function YearJournal({books,journal,year}:Props & {year:number}) {
       <div className={'an-grid an-'+group}>{items.map((label,i)=>{
         const key=group==='squares'?String(i):label, value=state[group][key];
         const book = booksById.get(value);
-        if(group==='squares' && i===12) return <div className="an-free" key={key}><img src="/marca/lua.png" alt=""/><span>Casa livre</span></div>;
+        if(group==='squares' && i===12) return <div className="an-free" key={key} aria-label="Paginarium, casa livre"><img src="/marca/icone.png" alt=""/><span>Paginarium</span></div>;
         return <button disabled={busy} key={key} className={'an-cell'+(value?' chosen':'')} onClick={event=>{
           choiceButton.current=event.currentTarget;
           setSelection({group,key,label});
@@ -79,9 +79,9 @@ function YearJournal({books,journal,year}:Props & {year:number}) {
           {group==='colors'
             ? <span className="an-color-label"><i aria-hidden="true" style={{background:colors[label]}}/><strong>{label}</strong></span>
             : <strong>{label}</strong>}
-          {group==='colors' && book
+          {book
             ? <AnnualBook book={book}/>
-            : value && <small><Check aria-hidden="true" size={13}/>{value==='*'?'Concluído':book?.title ?? 'Livro indisponível'}</small>}</button>;
+            : value && <small><Check aria-hidden="true" size={13}/>{value==='*'?'Concluído':'Livro indisponível'}</small>}</button>;
       })}</div>
       {selection&&<section className="an-picker"><h3>{selection.label}</h3><label>Vincular um livro da estante<select autoFocus disabled={busy} defaultValue={state[selection.group][selection.key]||''} key={selection.group+selection.key}
         onChange={e=>void select(selection.group,selection.key,e.target.value)}>
