@@ -11,11 +11,13 @@ import {
   HealthController,
   YearsController,
 } from "./controllers.js";
-import { Database } from "./database.js";
+import { DatabaseModule } from "./db.module.js";
+import { CompetitionModule } from "./competition/competition.module.js";
 import { FirebaseGuard } from "./firebase.guard.js";
 import { LibraryService } from "./library.service.js";
 
 @Module({
+  imports: [DatabaseModule, CompetitionModule],
   controllers: [
     HealthController,
     CatalogController,
@@ -23,7 +25,6 @@ import { LibraryService } from "./library.service.js";
     YearsController,
   ],
   providers: [
-    Database,
     LibraryService,
     CatalogService,
     { provide: APP_GUARD, useClass: FirebaseGuard },
