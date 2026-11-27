@@ -100,9 +100,8 @@ h1:focus {
 }
 .wordmark img,
 .mobile-brand img {
-  /* Integra o fundo dos ícones ao azul do cabeçalho e preserva os traços claros. */
-  filter: contrast(1.3);
-  mix-blend-mode: lighten;
+  /* Deixa o azul do cabeçalho aparecer atrás da marca. */
+  filter: url('/marca/fundo-transparente.svg#fundo');
 }
 .wordmark span,
 .mobile-brand {
