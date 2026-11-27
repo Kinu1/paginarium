@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react'
+import { useRef, useState, type FormEvent } from 'react'
 import {
   createUserWithEmailAndPassword,
   GoogleAuthProvider,
@@ -19,6 +19,10 @@ export function AccountDialog({ user, onClose }: { user: User | null; onClose: (
   const [mode, setMode] = useState<'login' | 'register' | 'reset'>('login')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [confirmation, setConfirmation] = useState('')
+  const [checkedConfirmation, setCheckedConfirmation] = useState(false)
+  const confirmationField = useRef<HTMLInputElement>(null)
+  const mismatch = mode === 'register' && checkedConfirmation && password !== confirmation
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
@@ -34,6 +38,8 @@ export function AccountDialog({ user, onClose }: { user: User | null; onClose: (
     setError('')
     setNotice('')
     setPassword('')
+    setConfirmation('')
+    setCheckedConfirmation(false)
   }
   async function perform(action: () => Promise<void>) {
     setError('')
@@ -49,6 +55,11 @@ export function AccountDialog({ user, onClose }: { user: User | null; onClose: (
   }
   async function submit(event: FormEvent) {
     event.preventDefault()
+    if (mode === 'register' && password !== confirmation) {
+      setCheckedConfirmation(true)
+      confirmationField.current?.focus()
+      return
+    }
     if (!auth) return
     const client = auth
     await perform(async () => {
@@ -58,7 +69,7 @@ export function AccountDialog({ user, onClose }: { user: User | null; onClose: (
       } else if (mode === 'register') {
         const credential = await createUserWithEmailAndPassword(client, email.trim(), password)
         await sendEmailVerification(credential.user)
-        setNotice('Enviamos um link de confirmação para seu e-mail.')
+        onClose()
       } else {
         await signInWithEmailAndPassword(client, email.trim(), password)
         onClose()
@@ -168,6 +179,19 @@ export function AccountDialog({ user, onClose }: { user: User | null; onClose: (
                     onChange={(e) => setPassword(e.target.value)}
                   />
                 </label>
+              )}
+              {mode === 'register' && (
+                <div>
+                  <label htmlFor="account-confirmation">Confirmar senha</label>
+                  <Input id="account-confirmation" ref={confirmationField} type="password"
+                    autoComplete="new-password" required value={confirmation}
+                    aria-invalid={mismatch || undefined}
+                    aria-describedby={mismatch ? 'confirmation-error' : undefined}
+                    onChange={(event) => setConfirmation(event.target.value)} />
+                  {mismatch && <p id="confirmation-error" role="alert" className="form-error">
+                    As senhas precisam ser iguais.
+                  </p>}
+                </div>
               )}
               {mode === 'login' && (
                 <button className="text-action" type="button" onClick={() => changeMode('reset')}>
