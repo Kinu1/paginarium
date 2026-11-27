@@ -6,6 +6,7 @@ import { searchResults } from "../dist/catalog.service.js";
 import {
   createBook,
   parse,
+  parseId,
   updateBook,
   updateYear,
 } from "../dist/validation.js";
@@ -25,6 +26,22 @@ const sample = (r) => ({
   tags: ["romance"],
   plannedYears: [2024],
   readings: [r],
+});
+
+test("normaliza UUIDs em rotas, fichas e vínculos de todas as grades anuais", () => {
+  const id = "a1234567-1234-4123-8123-123456789abc";
+  const uppercase = id.toUpperCase();
+  assert.equal(parseId(uppercase), id);
+  const original = { ...reading, id };
+  const same = { ...reading, id: uppercase };
+  assert.equal(parse(updateBook, sample(same)).readings[0].id, id);
+  assert.throws(() => parse(updateBook, { ...sample(original), readings: [original, same] }));
+  const reference = { a: uppercase };
+  const result = parse(updateYear, {
+    revision: 0, squares: reference, letters: reference, colors: reference, monthly: reference, rounds: reference,
+  });
+  for (const group of ["squares", "letters", "colors", "monthly", "rounds"])
+    assert.equal(result[group].a, id);
 });
 
 test("aceita mês de conclusão sem dias e distingue nota zero, meia-lua e ausência de nota", () => {

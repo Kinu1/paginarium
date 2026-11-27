@@ -1,7 +1,7 @@
 import { BadRequestException } from "@nestjs/common";
 import { z } from "zod";
 
-const uuid = z.uuid();
+export const uuid = z.uuid().toLowerCase();
 const year = z.number().int().min(1).max(9999);
 const monthPattern = /^([0-9]{4})-(0[1-9]|1[0-2])$/;
 const dayPattern = /^([0-9]{4})-(0[1-9]|1[0-2])-([0-9]{2})$/;

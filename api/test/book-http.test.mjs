@@ -85,7 +85,7 @@ test("Nest encaminha JSON e multipart, oferece capa privada sem cache e responde
     assert.equal(photo.headers.get("content-type"), "image/png");
     assert.deepEqual(Buffer.from(await photo.arrayBuffer()), image);
     assert.equal(
-      (await fetch(path + "?revision=3", { method: "DELETE" })).status,
+      (await fetch(base + "/books/" + id.toUpperCase() + "?revision=3", { method: "DELETE" })).status,
       204,
     );
     assert.deepEqual(calls.at(-1), { bookId: id, revision: 3 });

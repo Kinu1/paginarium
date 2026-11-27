@@ -6,6 +6,38 @@ const image = Buffer.from(
   'base64',
 )
 
+test('comprime um PNG grande antes de disponibilizar o envio da capa', async ({page}) => {
+  await page.goto('/')
+  await page.getByRole('button',{name:'Adicionar livro',exact:true}).click()
+  await page.getByRole('button',{name:'Adicionar manualmente'}).click()
+  const dialog = page.getByRole('dialog')
+  const generated = await page.evaluate(()=>{
+    const canvas = document.createElement('canvas')
+    canvas.width=1100
+    canvas.height=1500
+    const context=canvas.getContext('2d')!
+    const pixels=context.createImageData(canvas.width,canvas.height)
+    for (let i=0; i<pixels.data.length; i+=4) {
+      const shade = Math.floor(Math.random()*256)
+      pixels.data.set([shade,shade,shade,255],i)
+    }
+    context.putImageData(pixels,0,0)
+    return canvas.toDataURL().split(',')[1]
+  })
+  const buffer=Buffer.from(generated,'base64')
+  expect(buffer.length).toBeGreaterThan(150*1024)
+  await dialog.getByLabel('Enviar imagem').setInputFiles({name:'capa.png',mimeType:'image/png',buffer})
+  await expect(dialog.getByText(/Capa preparada/)).toBeVisible()
+  const preview=dialog.locator('.cover-preview img')
+  await expect(preview).toBeVisible()
+  const metadata=await preview.evaluate(async img=>{
+    const blob=await fetch((img as HTMLImageElement).src).then(response=>response.blob())
+    return {type:blob.type,size:blob.size}
+  })
+  expect(metadata.type).toBe('image/jpeg')
+  expect(metadata.size).toBeLessThanOrEqual(150*1024)
+})
+
 for (const scope of ['demonstração', 'conta privada'] as const) {
   test('edita capa, retoma o progresso e exclui o livro na ' + scope, async ({ page, request }) => {
     await page.setViewportSize({ width: 390, height: 844 })
