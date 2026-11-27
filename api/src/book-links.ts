@@ -1,6 +1,7 @@
 import { Prisma } from "./generated/prisma/client.js";
 import { NotFoundException } from "@nestjs/common";
 import { clearCompetitionBook } from "./competition/book-link.js";
+import { clearChallengeBook } from "./community/book-link.js";
 
 type Transaction = Prisma.TransactionClient;
 const groups = ["squares", "letters", "colors", "monthly", "rounds"] as const;
@@ -50,4 +51,5 @@ export async function clearBookLinks(
       });
   }
   await clearCompetitionBook(tx, owner, bookId);
+  await clearChallengeBook(tx, owner, bookId);
 }

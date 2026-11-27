@@ -1,0 +1,20 @@
+.community > .an-tabs {margin-bottom:1.25rem}
+.community h2 {font:normal clamp(1.45rem,3vw,2rem)/1.2 'Instrument Serif',Georgia,serif}
+.challenge-editor fieldset,.challenge-card,.challenge-progress-item {padding:1rem;background:#fffdf7;border:1px solid #d3cec2;border-radius:.65rem;min-width:0}
+.challenge-editor fieldset,.challenge-editor label,.challenge-filter,.challenge-progress-item label {display:grid;gap:.5rem}
+.challenge-editor fieldset {gap:1rem;max-width:43rem}
+.challenge-editor legend {font:1.5rem Georgia,serif}
+.challenge-editor :is(input,textarea),.community select {background:#fffefa;border:1px solid #c6c5bd;border-radius:.4rem;padding:.55rem;max-width:100%;width:100%;color:inherit}
+.challenge-actions,.challenge-item-edit {display:flex;align-items:center;gap:.6rem;flex-wrap:wrap}
+.challenge-item-edit > label {flex:1;min-width:9rem}
+.challenge-filter {max-width:18rem}
+.challenge-cards,.challenge-progress {display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,14rem),1fr));gap:.75rem;margin:1rem 0}
+.challenge-card {display:grid;align-content:start;gap:.6rem;text-align:left}
+.challenge-card h2,.challenge-card p {margin:0}
+.challenge-card details p,.challenge-detail p,.challenge-card p {white-space:pre-line;overflow-wrap:anywhere}
+.community :is(.challenge-detail,.challenge-card,.challenge-editor,.challenge-actions) button:not(.jr-primary) {background:#fffdf8;color:#183048;border:1px solid #b9c2c3;padding:.5rem .8rem;border-radius:.45rem;cursor:pointer}
+.challenge-progress-item {display:grid;align-content:start;gap:.5rem;overflow-wrap:anywhere}
+.challenge-progress.format-bingo {grid-template-columns:repeat(5,minmax(0,1fr))}
+.community-free {grid-column:3;grid-row:3}
+.challenge-progress.format-bingo .challenge-progress-item {padding:.5rem}
+@media(max-width:650px){.challenge-progress.format-bingo {overflow-x:auto;grid-template-columns:repeat(5,minmax(6rem,1fr))}.challenge-progress.format-bingo .an-book {flex-direction:column}.challenge-progress.format-bingo .an-cover {width:2.5rem;flex-basis:auto}}

@@ -13,11 +13,12 @@ import {
 } from "./controllers.js";
 import { DatabaseModule } from "./db.module.js";
 import { CompetitionModule } from "./competition/competition.module.js";
+import { CommunityModule } from "./community/community.module.js";
 import { FirebaseGuard } from "./firebase.guard.js";
 import { LibraryService } from "./library.service.js";
 
 @Module({
-  imports: [DatabaseModule, CompetitionModule],
+  imports: [DatabaseModule, CompetitionModule, CommunityModule],
   controllers: [
     HealthController,
     CatalogController,
