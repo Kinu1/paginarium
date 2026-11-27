@@ -24,7 +24,8 @@ O Compose inicia quatro serviços. O site e a API usam as portas locais 5173 e 3
 
 - Buscar por título, autor ou ISBN na Open Library, consultar outras edições e cadastrar manualmente um livro com capa opcional.
 - Organizar por status e tags, montar a lista do ano e registrar os dias em que realmente houve leitura.
-- Escrever resenhas com rascunho local, avaliar em passos de meia lua, favoritar e iniciar releituras. Uma conclusão antiga pode registrar apenas mês e ano.
+- Editar título, autoria e capa pela ficha, acompanhar o progresso em páginas ou percentual e retomar uma leitura abandonada.
+- Escrever resenhas com rascunho local, avaliar em passos de 0,25 lua, favoritar e iniciar releituras. Uma conclusão antiga pode registrar apenas mês e ano.
 - Explorar o histórico por período, formato, tags, nota e favoritos. No calendário, cada dia de atividade mostra os livros lidos.
 - Preencher bingo, desafios de A a Z e arco-íris, escolher favoritos mensais e comparar as capas nas rodadas do favorito anual.
 

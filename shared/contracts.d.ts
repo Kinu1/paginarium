@@ -6,10 +6,14 @@ export interface CatalogBook {
   editionKey: string | null;
 }
 export type ReadingFormat = 'physical' | 'ebook' | 'audio';
-export type BookStatus = 'want' | 'reading' | 'rereading' | 'read';
+export type BookStatus = 'want' | 'reading' | 'rereading' | 'read' | 'abandoned';
 export interface Reading {
   id: string;
   format: ReadingFormat;
+  started: string | null;
+  currentPage: number | null;
+  totalPages: number | null;
+  progressPercent: number | null;
   days: string[];
   finished: string | null;
   rating: number | null;

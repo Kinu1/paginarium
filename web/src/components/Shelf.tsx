@@ -7,6 +7,7 @@ import {
   Feather,
   Heart,
   LibraryBig,
+  Pause,
   RotateCcw,
   Search,
   Sparkles,
@@ -21,9 +22,10 @@ export const statusLabels: Record<Status, string> = {
   reading: 'Lendo',
   rereading: 'Relendo',
   read: 'Lido',
+  abandoned: 'Abandonado',
 }
 type Scope = 'all' | 'favorites' | 'planned'
-const statusIcons = { want: Bookmark, reading: BookOpen, rereading: RotateCcw, read: Check }
+const statusIcons = { want: Bookmark, reading: BookOpen, rereading: RotateCcw, read: Check, abandoned: Pause }
 const scopes: Record<Scope, string> = {
   all: 'Meus livros',
   favorites: 'Meus favoritos',
@@ -82,6 +84,7 @@ export function Shelf({
             </span>
             <h2>{spotlight.title}</h2>
             <p>{spotlight.author}</p>
+            {activeReading?.progressPercent != null && <span className="shelf-progress">{activeReading.progressPercent}% da leitura</span>}
             <Button className="feature-button" onClick={() => onOpen(spotlight)}>
               <Feather /> Registrar leitura
             </Button>
@@ -137,14 +140,14 @@ export function Shelf({
         </div>
         <div className="shelf-tools">
           <div className="status-tabs" aria-label="Filtrar por status">
-            {(['all', 'reading', 'rereading', 'want', 'read'] as const).map((value) => (
+            {(['all', 'reading', 'rereading', 'want', 'read', 'abandoned'] as const).map((value) => (
               <button
                 type="button"
                 key={value}
                 aria-pressed={status === value}
                 onClick={() => setStatus(value)}
               >
-                {value === 'all' ? 'Todos' : value === 'read' ? 'Lidos' : statusLabels[value]}
+                {value === 'all' ? 'Todos' : value === 'read' ? 'Lidos' : value === 'abandoned' ? 'Abandonados' : statusLabels[value]}
               </button>
             ))}
           </div>

@@ -1,7 +1,7 @@
 import { BadRequestException } from "@nestjs/common";
 import { z } from "zod";
 
-const uuid = z.uuid();
+export const uuid = z.uuid().toLowerCase();
 const year = z.number().int().min(1).max(9999);
 const monthPattern = /^([0-9]{4})-(0[1-9]|1[0-2])$/;
 const dayPattern = /^([0-9]{4})-(0[1-9]|1[0-2])-([0-9]{2})$/;
@@ -32,21 +32,55 @@ export const createBook = z.strictObject({
   workKey: workKey.nullish(),
   editionKey: editionKey.nullish(),
 });
+const revisionNumber = z.number().int().min(1).max(2147483646);
+export const patchBook = createBook
+  .pick({ title: true, author: true, coverUrl: true })
+  .partial()
+  .extend({ revision: revisionNumber });
 
-const reading = z
+export const reading = z
   .strictObject({
     id: uuid,
     format: z.enum(["physical", "ebook", "audio"]),
+    started: z.string().refine(validDay).nullish(),
+    currentPage: z.number().int().min(0).max(2147483647).nullish(),
+    totalPages: z.number().int().min(1).max(2147483647).nullish(),
+    progressPercent: z.number().min(0).max(100).nullish(),
     days: z
       .array(z.string().refine(validDay))
       .max(20000)
       .refine((days) => new Set(days).size === days.length),
     finished: completed.nullable(),
-    rating: z.number().min(0).max(5).multipleOf(0.5).nullable(),
+    rating: z.number().min(0).max(5).multipleOf(0.25).nullable(),
     favorite: z.boolean(),
     review: z.string().max(30000),
   })
   .superRefine((r, ctx) => {
+    if (
+      r.format !== "audio" &&
+      r.currentPage != null &&
+      r.totalPages != null &&
+      r.currentPage > r.totalPages
+    ) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["currentPage"],
+        message: "A página atual supera o total de páginas.",
+      });
+    }
+    const start = r.started;
+    if (
+      start &&
+      (r.days.some((day) => day < start) ||
+        (r.finished && start.slice(0, r.finished.length) > r.finished))
+    ) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["started"],
+        message:
+          "O início precisa anteceder as datas registradas e a conclusão.",
+      });
+    }
     if (!r.finished && (r.favorite || r.rating !== null))
       ctx.addIssue({
         code: "custom",
@@ -64,8 +98,8 @@ const reading = z
 
 export const updateBook = z
   .strictObject({
-    revision: z.number().int().min(1).max(2147483646),
-    status: z.enum(["want", "reading", "rereading", "read"]),
+    revision: revisionNumber,
+    status: z.enum(["want", "reading", "rereading", "read", "abandoned"]),
     tags: z
       .array(labels)
       .max(40)
@@ -124,6 +158,11 @@ export const parseYear = (value: string) => {
   return parse(year, Number(value));
 };
 export const parseId = (value: string) => parse(uuid, value);
+export const parseRevision = (value: unknown) => {
+  if (typeof value !== "string" || !/^\d{1,10}$/.test(value))
+    throw new BadRequestException("Informe a revisão do livro.");
+  return parse(revisionNumber, Number(value));
+};
 export const parseWork = (value: unknown) => parse(workKey, value);
 export const parseQuery = (value: unknown) =>
   parse(z.string().trim().min(1).max(200), value);
@@ -141,5 +180,6 @@ export function parse<T>(schema: z.ZodType<T>, body: unknown): T {
   return result.data;
 }
 export type NewBook = z.infer<typeof createBook>;
+export type BookMetadata = z.infer<typeof patchBook>;
 export type BookChanges = z.infer<typeof updateBook>;
 export type YearChanges = z.infer<typeof updateYear>;

@@ -38,7 +38,7 @@ async function bootstrap() {
   app.useBodyParser("json", { limit: "2mb" });
   app.enableCors({
     origin: config.origins,
-    methods: ["GET", "POST", "PUT", "OPTIONS"],
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Authorization", "Content-Type"],
   });
   app.enableShutdownHooks();

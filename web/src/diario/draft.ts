@@ -1,4 +1,5 @@
 import type { Book, Reading } from '../../../shared/contracts'
+import { withReadingDefaults, pageProgress } from './readingDefaults.ts'
 
 export interface Draft {
   base: Book
@@ -14,7 +15,8 @@ export function readDraft(key: string, bookId: string): Draft | null {
   try {
     const draft = JSON.parse(localStorage.getItem(key) ?? 'null')
     if (draft?.base?.id === bookId && draft.book?.id === bookId && Array.isArray(draft.book.readings)
-      && Array.isArray(draft.base.readings) && typeof draft.readingId === 'string') return draft
+      && Array.isArray(draft.base.readings) && typeof draft.readingId === 'string')
+      return { ...draft, base: withReadingDefaults(draft.base), book: withReadingDefaults(draft.book) }
   } catch { /* O editor também funciona quando o armazenamento está indisponível. */ }
   return null
 }
@@ -43,6 +45,10 @@ export function recoverDraft(draft: Draft, remote: Book): Book {
     const latest = readings[index]
     const merged: Reading = {
       ...latest, format: changed(original.format, edited.format, latest.format),
+      started: changed(original.started, edited.started, latest.started),
+      currentPage: changed(original.currentPage, edited.currentPage, latest.currentPage),
+      totalPages: changed(original.totalPages, edited.totalPages, latest.totalPages),
+      progressPercent: changed(original.progressPercent, edited.progressPercent, latest.progressPercent),
       finished: changed(original.finished, edited.finished, latest.finished),
       days: changed(original.days, edited.days, latest.days),
       favorite: changed(original.favorite, edited.favorite, latest.favorite),
@@ -50,6 +56,8 @@ export function recoverDraft(draft: Draft, remote: Book): Book {
       review: latest.review !== original.review && edited.review !== original.review
         ? combineReviews(latest.review, edited.review) : changed(original.review, edited.review, latest.review),
     }
+    if (merged.format === 'audio') { merged.currentPage = null; merged.totalPages = null }
+    else merged.progressPercent = pageProgress(merged.currentPage, merged.totalPages)
     readings[index] = merged
   }
   // Duas releituras iniciadas em paralelo recebem IDs diferentes. A ficha ativa
@@ -61,8 +69,14 @@ export function recoverDraft(draft: Draft, remote: Book): Book {
     const active = open.find(r => r.id === originalId) ?? open[0]
     const localActive = local.readings.find(r => !r.finished)
     const combined: Reading = { ...active, format: localActive?.format ?? active.format,
+      started: [active.started, localActive?.started].filter((day):day is string=>!!day).sort()[0] ?? null,
+      currentPage: localActive?.currentPage ?? active.currentPage,
+      totalPages: localActive?.totalPages ?? active.totalPages,
+      progressPercent: localActive?.progressPercent ?? active.progressPercent,
       review: [...new Set(open.map(r => r.review).filter(Boolean))].join('\n\n'),
       days: [...new Set(open.flatMap(r => r.days))].sort() }
+    if (combined.format === 'audio') { combined.currentPage = null; combined.totalPages = null }
+    else combined.progressPercent = pageProgress(combined.currentPage, combined.totalPages)
     reconciled = readings.filter(r => r.finished || r.id === active.id)
       .map(r => r.id === active.id ? combined : r)
   }

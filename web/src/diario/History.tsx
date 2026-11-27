@@ -3,11 +3,12 @@ import type { Book } from '../../../shared/contracts'
 import { activityByDay, completedByWork, formattedDate, formats, ratingText } from './model'
 import type { HistoryFilter } from './model'
 import { Calendar } from './Calendar'
+import { BookCover } from '../components/BookCover'
 import { Moons } from './MoonRating'
 
 const monthNames = Array.from({ length: 12 }, (_, n) =>
   new Intl.DateTimeFormat('pt-BR', { month: 'long' }).format(new Date(2020, n, 1)))
-const ratings = Array.from({ length: 11 }, (_, n) => n / 2)
+const ratings = Array.from({ length: 21 }, (_, n) => n / 4)
 type OpenBook = (book: Book, readingId?: string) => void
 
 function initialFilter(): HistoryFilter {
@@ -71,7 +72,7 @@ export function History({ books, onOpen }: { books: Book[]; onOpen: OpenBook }) 
       <label>Formato<select value={filter.format} onChange={e => update({ format: e.target.value })}>
         <option value="">Todos</option>{Object.entries(formats).map(([key, text]) => <option value={key} key={key}>{text}</option>)}
       </select></label>
-      <label>Avaliação<select value={filter.rating} onChange={e => update({ rating: e.target.value })}>
+      <label>Avaliação<select aria-label="Avaliação" value={filter.rating} onChange={e => update({ rating: e.target.value })}>
         <option value="">Todas</option><option value="none">Sem nota</option>
         {ratings.map(rating => <option value={rating} key={rating}>{ratingText(rating)}</option>)}
       </select></label>
@@ -91,7 +92,7 @@ export function History({ books, onOpen }: { books: Book[]; onOpen: OpenBook }) 
         : <div className="jr-history-grid">{groups.map(entries => {
           const { book, reading } = entries[0]
           return <button type="button" className="jr-history-card" key={book.id} onClick={() => onOpen(book, reading.id)}>
-            <span className="jr-history-cover">{book.coverUrl ? <img src={book.coverUrl} alt="" loading="lazy" /> : <span>{book.title}</span>}
+            <span className="jr-history-cover"><BookCover title={book.title} coverUrl={book.coverUrl}/>
               {reading.favorite && <b aria-label="Favorito">♥</b>}
             </span>
             <strong>{book.title}</strong><span>{book.author}</span>

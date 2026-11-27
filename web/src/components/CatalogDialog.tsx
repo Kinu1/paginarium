@@ -6,11 +6,12 @@ import { Button } from './ui/button'
 import { Input } from './ui/input'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from './ui/dialog'
 import { BookCover } from './BookCover'
+import { CoverEditor, checkedCoverUrl, originalCover, type CoverChoice } from './CoverEditor'
 
 interface Props {
   journal: Journal
   onOpenBook: (book: Book) => void
-  onAdd: (book: CatalogBook) => Promise<Book>
+  onAdd: (book: CatalogBook, file?: File) => Promise<Book>
   onClose: () => void
 }
 
@@ -19,7 +20,8 @@ export function CatalogDialog({ journal, onOpenBook, onAdd, onClose }: Props) {
   const [query, setQuery] = useState('')
   const [title, setTitle] = useState('')
   const [author, setAuthor] = useState('')
-  const [cover, setCover] = useState('')
+  const [cover, setCover] = useState<CoverChoice>(originalCover)
+  const [preparingCover, setPreparingCover] = useState(false)
   const [results, setResults] = useState<CatalogBook[]>([])
   const [searched, setSearched] = useState(false)
   const [searching, setSearching] = useState(false)
@@ -58,12 +60,12 @@ export function CatalogDialog({ journal, onOpenBook, onAdd, onClose }: Props) {
       if (current === request.current) setSearching(false)
     }
   }
-  async function add(book: CatalogBook) {
+  async function add(book: CatalogBook, file?: File) {
     const current = ++request.current
     setAdding(true)
     setError('')
     try {
-      const saved = await onAdd(book)
+      const saved = await onAdd(book, file)
       if (current === request.current) onOpenBook(saved)
     } catch (reason) {
       if (current === request.current) setError(reason instanceof Error ? reason.message : 'Não foi possível adicionar o livro.')
@@ -99,17 +101,20 @@ export function CatalogDialog({ journal, onOpenBook, onAdd, onClose }: Props) {
       setError('Preencha o título e a autoria.')
       return
     }
-    if (cover && !/^https:\/\//i.test(cover.trim())) {
-      setError('Use um endereço de capa que comece com https://.')
+    let coverUrl: string | null = null
+    try {
+      if (cover.kind === 'url') coverUrl = checkedCoverUrl(cover.value)
+    } catch (cause) {
+      setError((cause as Error).message)
       return
     }
     void add({
       title: title.trim(),
       author: author.trim(),
-      coverUrl: cover.trim() || null,
+      coverUrl,
       editionKey: null,
       workKey: null,
-    })
+    }, cover.kind === 'file' ? cover.value : undefined)
   }
   return (
     <Dialog
@@ -152,21 +157,11 @@ export function CatalogDialog({ journal, onOpenBook, onAdd, onClose }: Props) {
                 onChange={(e) => setAuthor(e.target.value)}
               />
             </label>
-            <label htmlFor="manual-cover">
-              Link da capa <small>(opcional)</small>
-              <Input
-                id="manual-cover"
-                type="url"
-                maxLength={2000}
-                placeholder="https://"
-                value={cover}
-                onChange={(e) => setCover(e.target.value)}
-              />
-            </label>
-            <Button type="submit" disabled={adding}>
+            <CoverEditor title={title} current={null} choice={cover} change={setCover} onBusy={setPreparingCover}/>
+            <Button type="submit" disabled={adding || preparingCover}>
               <Plus /> {adding ? 'Adicionando…' : 'Adicionar à estante'}
             </Button>
-            <button type="button" className="text-action" onClick={() => switchMode(false)}>
+            <button type="button" className="text-action" disabled={adding || preparingCover} onClick={() => switchMode(false)}>
               <ArrowLeft size={15} /> Voltar à busca
             </button>
           </form>

@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { activityByDay, completedByWork, ratingText, setStatus } from './model.ts'
 import { draftKey, recoverDraft } from './draft.ts'
+import { withReadingDefaults, pageProgress, readingProblem } from './readingDefaults.ts'
 
 const book = { id: 'b', revision: 1, workKey: '/works/OL1W', status: 'want',
   title: 'A ilha', author: 'Lua', tags: ['nacional', 'romance'], plannedYears: [], readings: [] }
@@ -69,4 +70,28 @@ test('duas releituras iniciadas em paralelo viram uma ficha ativa com ambos os t
   assert.equal(active[0].id, remoteReading.id)
   assert.equal(active[0].review, 'Texto do celular\n\nTexto do computador')
   assert.deepEqual(active[0].days, ['2026-10-02', '2026-10-03'])
+})
+
+test('abandonar e retomar mantém a ficha com a mesma data, páginas e percentual', () => {
+  const first = setStatus(book,'reading','2026-01-04')
+  const active = {...first.readings[0],currentPage:0,totalPages:180,progressPercent:0}
+  const paused = setStatus({...first,readings:[active]},'abandoned')
+  const resumed = setStatus(paused,'reading','2026-02-05')
+  assert.deepEqual(resumed.readings,[active])
+  assert.equal(resumed.readings[0].started,'2026-01-04')
+  assert.equal(setStatus(book,'read','2026-01-15').readings[0].started,null)
+  assert.equal(ratingText(4.25),'4,25 de 5 luas')
+  assert.equal(ratingText(4.75),'4,75 de 5 luas')
+})
+
+test('livros antigos carregam campos vazios e validar progresso respeita zero e mês de conclusão',()=>{
+  const legacy=withReadingDefaults({...book,readings:[january]}).readings[0]
+  assert.equal(legacy.started,null)
+  assert.equal(legacy.progressPercent,null)
+  assert.equal(pageProgress(0,100),0)
+  assert.equal(pageProgress(21,40),53)
+  assert.equal(pageProgress(101,100),null)
+  assert.equal(readingProblem({...legacy,started:'2026-01-31'}),null)
+  assert.ok(readingProblem({...legacy,started:'2026-02-01'}))
+  assert.ok(readingProblem({...legacy,currentPage:101,totalPages:100}))
 })

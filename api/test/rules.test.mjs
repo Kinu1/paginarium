@@ -6,6 +6,7 @@ import { searchResults } from "../dist/catalog.service.js";
 import {
   createBook,
   parse,
+  parseId,
   updateBook,
   updateYear,
 } from "../dist/validation.js";
@@ -27,8 +28,24 @@ const sample = (r) => ({
   readings: [r],
 });
 
+test("normaliza UUIDs em rotas, fichas e vínculos de todas as grades anuais", () => {
+  const id = "a1234567-1234-4123-8123-123456789abc";
+  const uppercase = id.toUpperCase();
+  assert.equal(parseId(uppercase), id);
+  const original = { ...reading, id };
+  const same = { ...reading, id: uppercase };
+  assert.equal(parse(updateBook, sample(same)).readings[0].id, id);
+  assert.throws(() => parse(updateBook, { ...sample(original), readings: [original, same] }));
+  const reference = { a: uppercase };
+  const result = parse(updateYear, {
+    revision: 0, squares: reference, letters: reference, colors: reference, monthly: reference, rounds: reference,
+  });
+  for (const group of ["squares", "letters", "colors", "monthly", "rounds"])
+    assert.equal(result[group].a, id);
+});
+
 test("aceita mês de conclusão sem dias e distingue nota zero, meia-lua e ausência de nota", () => {
-  for (const rating of [null, 0, 4.5, 5]) {
+  for (const rating of [null, 0, 0.25, 4.5, 4.75, 5]) {
     const row = parse(updateBook, sample({ ...reading, days: [], rating }))
       .readings[0];
     assert.equal(row.finished, "2024-03");
@@ -41,7 +58,7 @@ test("mantém datas não consecutivas, rejeita datas inexistentes e notas fora d
   for (const changes of [
     { days: ["2025-02-29"] },
     { days: ["2024-03-02", "2024-03-02"] },
-    { rating: 4.75 },
+    { rating: 4.1 },
     { finished: "2025-13" },
     { rating: 6 },
     { days: ["2024-04-01"] },

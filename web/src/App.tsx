@@ -16,7 +16,8 @@ import {
 } from 'lucide-react'
 import type { Book, CatalogBook } from '../../shared/contracts'
 import { auth, authMessage } from './auth'
-import { ConflictError, createJournal } from './data'
+import { ConflictError, createJournal, type BookMetadata } from './data'
+import { CoverContext } from './components/BookCover'
 import { Annual } from './annual'
 import { BookDialog, History } from './diario'
 import { AccountDialog } from './components/AccountDialog'
@@ -109,12 +110,9 @@ function Workspace({ user, onAccount }: { user: User | null; onAccount: () => vo
         : [book, ...items],
     )
   }
-  async function save(book: Book) {
+  async function refreshAfterConflict<T>(operation:()=>Promise<T>):Promise<T> {
     try {
-      const result = await journal.save(book)
-      replace(result)
-      setToast('Leitura salva na sua estante.')
-      return result
+      return await operation()
     } catch (reason) {
       if (reason instanceof ConflictError) {
         try {
@@ -126,17 +124,35 @@ function Workspace({ user, onAccount }: { user: User | null; onAccount: () => vo
       throw reason
     }
   }
-  async function add(book: CatalogBook) {
-    const result = await journal.add(book)
+  async function save(book: Book) {
+    const result = await refreshAfterConflict(()=>journal.save(book))
+    replace(result)
+    setToast('Leitura salva na sua estante.')
+    return result
+  }
+  async function add(book: CatalogBook, file?:File) {
+    const result = await journal.add(book,file)
     replace(result)
     setToast('Livro na sua estante.')
     return result
   }
   const current = books.find((item) => item.id === selected?.id)
+  async function editBook(book: Book, metadata: BookMetadata, file?: File) {
+    const result = await refreshAfterConflict(()=>journal.edit(book, metadata, file))
+    replace(result)
+    setToast('Dados do livro atualizados.')
+    return result
+  }
+  async function deleteBook(book: Book) {
+    await refreshAfterConflict(()=>journal.remove(book))
+    setBooks(items => items.filter(item => item.id !== book.id))
+    closeModal()
+    setToast('Livro excluído da estante.')
+  }
   const countRead = books.filter((book) => book.readings.some((reading) => reading.finished)).length
   const currentUser = user?.displayName || user?.email || 'Sua conta'
   return (
-    <div className="app-shell">
+    <CoverContext.Provider value={journal}><div className="app-shell">
       <a className="skip-link" href="#conteudo">
         Pular para o conteúdo
       </a>
@@ -299,6 +315,8 @@ function Workspace({ user, onAccount }: { user: User | null; onAccount: () => vo
           ownerKey={user?.uid || 'demo'}
           onClose={closeModal}
           onSave={save}
+          onEdit={editBook}
+          onDelete={deleteBook}
         />
       )}
       {toast && (
@@ -306,7 +324,7 @@ function Workspace({ user, onAccount }: { user: User | null; onAccount: () => vo
           {toast}
         </div>
       )}
-    </div>
+    </div></CoverContext.Provider>
   )
 }
 

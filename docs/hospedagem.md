@@ -11,4 +11,15 @@ O site estático usa Firebase Hosting no plano Spark. A API usa a imagem de `api
 
 A criação e recuperação das contas reais depende dos provedores configurados no projeto Firebase. Os dados da demonstração ficam no navegador. Mantenha os backups reais em armazenamento privado e verifique a restauração em ambiente isolado antes de usá-los.
 
+### Espaço ocupado pelas capas
+
+As capas enviadas ocupam até 150 KiB por livro e ficam na tabela privada `BookCover`. Para acompanhar o consumo durante o beta, confira o armazenamento total no painel do Neon e execute a consulta de leitura abaixo. Ela informa a quantidade de capas, os bytes de imagens e o espaço total da tabela, incluindo índices e armazenamento auxiliar.
+
+```sql
+SELECT count(*) AS capas,
+       pg_size_pretty(coalesce(sum(octet_length(bytes)), 0)::bigint) AS imagens,
+       pg_size_pretty(pg_total_relation_size('"BookCover"')) AS espaco_total
+FROM "BookCover";
+```
+
 [Firebase Hosting](https://firebase.google.com/docs/hosting/quickstart) · [Planos do Firebase](https://firebase.google.com/pricing) · [Plano Free do Neon](https://neon.com/pricing) · [Limites do Render Free](https://render.com/docs/free)
