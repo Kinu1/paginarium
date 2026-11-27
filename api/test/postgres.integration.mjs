@@ -2,6 +2,8 @@ import "reflect-metadata";
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { after, test } from "node:test";
+import sharp from "sharp";
+import { checkCover } from "../dist/book-cover.js";
 import { Database } from "../dist/database.js";
 import { LibraryService } from "../dist/library.service.js";
 import { parse, updateBook } from "../dist/validation.js";
@@ -104,4 +106,173 @@ test("persiste o diário privado, mantém releituras e rejeita gravações conco
     (e) => e.getStatus() === 404,
   );
   assert.deepEqual(await library.year(other, 2025), blank);
+});
+
+test("capa privada, metadados versionados, progresso e remoção atômica dos vínculos", async () => {
+  const original = { title: "Mar de papel", author: "Lua" };
+  const image = await sharp({
+    create: { width: 2, height: 3, channels: 3, background: "blue" },
+  })
+    .jpeg()
+    .toBuffer();
+  const cover = await checkCover({ buffer: image, mimetype: "image/jpeg" });
+  const book = await library.add(owner, original, cover);
+  const ownUrl = "/books/" + book.id + "/cover";
+  assert.equal(book.coverUrl, ownUrl);
+  assert.deepEqual(
+    Buffer.from((await library.cover(owner, book.id)).bytes),
+    image,
+  );
+  await assert.rejects(
+    library.cover(other, book.id),
+    (e) => e.getStatus() === 404,
+  );
+  await assert.rejects(
+    library.metadata(other, book.id, {
+      revision: book.revision,
+      title: "Indevido",
+    }),
+    (e) => e.getStatus() === 404,
+  );
+  const renamed = await library.metadata(owner, book.id, {
+    revision: book.revision,
+    title: "Mar sem fim",
+  });
+  assert.equal(renamed.coverUrl, ownUrl);
+  assert.equal(
+    (await library.add(owner, { ...original, title: renamed.title })).id,
+    book.id,
+  );
+  await assert.rejects(
+    library.metadata(owner, book.id, {
+      revision: book.revision,
+      coverUrl: null,
+    }),
+    (e) => e.getStatus() === 409,
+  );
+  const external = await library.metadata(owner, book.id, {
+    revision: renamed.revision,
+    coverUrl: "https://example.org/capa.jpg",
+  });
+  await assert.rejects(
+    library.cover(owner, book.id),
+    (e) => e.getStatus() === 404,
+  );
+  const again = await library.metadata(
+    owner,
+    book.id,
+    { revision: external.revision },
+    cover,
+  );
+  const removedCover = await library.metadata(owner, book.id, {
+    revision: again.revision,
+    coverUrl: null,
+  });
+  assert.equal(removedCover.coverUrl, null);
+  const ready = await library.metadata(
+    owner,
+    book.id,
+    { revision: removedCover.revision },
+    cover,
+  );
+  const row = {
+    id: randomUUID(),
+    format: "ebook",
+    days: [],
+    finished: null,
+    started: "2026-01-01",
+    rating: null,
+    favorite: false,
+    review: "Continua amanhã",
+    currentPage: 21,
+    totalPages: 80,
+    progressPercent: 99,
+  };
+  const progress = await library.save(
+    owner,
+    book.id,
+    parse(updateBook, {
+      revision: ready.revision,
+      status: "reading",
+      tags: [],
+      plannedYears: [],
+      readings: [row],
+    }),
+  );
+  assert.equal(progress.readings[0].progressPercent, 26);
+  const legacy = {
+    id: row.id,
+    format: row.format,
+    days: [],
+    finished: null,
+    rating: null,
+    favorite: false,
+    review: "Anotação nova",
+  };
+  const cancelled = await library.save(
+    owner,
+    book.id,
+    parse(updateBook, {
+      revision: progress.revision,
+      status: "abandoned",
+      tags: [],
+      plannedYears: [],
+      readings: [legacy],
+    }),
+  );
+  assert.equal(cancelled.readings[0].currentPage, 21);
+  assert.equal(cancelled.readings[0].started, row.started);
+  const audio = await library.save(
+    owner,
+    book.id,
+    parse(updateBook, {
+      revision: cancelled.revision,
+      status: "reading",
+      tags: [],
+      plannedYears: [],
+      readings: [{ ...legacy, format: "audio", progressPercent: 12.5 }],
+    }),
+  );
+  assert.equal(audio.readings[0].currentPage, null);
+  assert.equal(audio.readings[0].progressPercent, 12.5);
+
+  const year = await library.year(owner, 2031);
+  const chosen = await library.saveYear(owner, 2031, {
+    ...year,
+    squares: { one: "*", two: book.id },
+    letters: { M: book.id },
+    colors: { Azul: book.id },
+    monthly: { 1: book.id },
+    rounds: { r0: book.id },
+  });
+  const safe = await library.add(other, original);
+  const otherYear = await library.year(other, 2031);
+  await library.saveYear(other, 2031, {
+    ...otherYear,
+    letters: { M: safe.id },
+  });
+  await assert.rejects(
+    library.remove(other, book.id, audio.revision),
+    (e) => e.getStatus() === 404,
+  );
+  await assert.rejects(
+    library.remove(owner, book.id, ready.revision),
+    (e) => e.getStatus() === 409,
+  );
+  await library.remove(owner, book.id, audio.revision);
+  assert.equal(
+    (await library.list(owner)).some((b) => b.id === book.id),
+    false,
+  );
+  assert.equal(await db.bookCover.count({ where: { bookId: book.id } }), 0);
+  assert.equal(await db.reading.count({ where: { bookId: book.id } }), 0);
+  assert.deepEqual(await library.year(owner, 2031), {
+    revision: chosen.revision + 1,
+    squares: { one: "*" },
+    letters: {},
+    colors: {},
+    monthly: {},
+    rounds: {},
+  });
+  assert.equal((await library.year(other, 2031)).letters.M, safe.id);
 });

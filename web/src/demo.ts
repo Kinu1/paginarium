@@ -27,10 +27,15 @@ export function initialShelf(): Book[] {
     const book = newShelfBook(catalog);
     book.tags = [titles[i][3]];
     book.plannedYears = [today.getFullYear()];
-    const reading: Reading = { id: crypto.randomUUID(), format: 'physical', days: [], finished: null, rating: null, favorite: false, review: '' };
+    const reading: Reading = { id: crypto.randomUUID(), format: 'physical', days: [], started: null,
+      currentPage: null, totalPages: null, progressPercent: null, finished: null, rating: null, favorite: false, review: '' };
     if (i === 0) {
       book.status = 'reading';
       reading.days = [month + '-01'];
+      reading.started = month + '-01';
+      reading.currentPage = 42;
+      reading.totalPages = 210;
+      reading.progressPercent = 20;
       book.readings = [reading];
     } else if (i === 1 || i === 3) {
       book.status = 'read';

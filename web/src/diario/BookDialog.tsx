@@ -4,6 +4,9 @@ import { Calendar } from './Calendar'
 import { MoonRating } from './MoonRating'
 import { draftKey, readDraft, recoverDraft } from './draft'
 import { dateKey, formattedDate, formats, setStatus, statuses } from './model'
+import { pageProgress, readingProblem } from './readingDefaults'
+import { BookCover } from '../components/BookCover'
+import { BookManagement, type DeleteBook, type EditBook } from '../components/BookManagement'
 
 interface Props {
   book: Book
@@ -11,6 +14,8 @@ interface Props {
   initialReadingId?: string
   onClose: () => void
   onSave: (book: Book) => Promise<Book>
+  onEdit: EditBook
+  onDelete: DeleteBook
 }
 
 function ReadingEditor({ reading, update }: { reading: Reading; update: (patch: Partial<Reading>) => void }) {
@@ -38,7 +43,11 @@ function ReadingEditor({ reading, update }: { reading: Reading; update: (patch: 
   }
   return <div className="jr-reading">
     <div className="jr-two">
-      <label>Formato da leitura<select value={reading.format} onChange={e => update({ format: e.target.value as Reading['format'] })}>
+      <label>Formato da leitura<select value={reading.format} onChange={e => {
+        const format = e.target.value as Reading['format']
+        update(format === 'audio' || reading.format === 'audio' ?
+          {format, currentPage:null, totalPages:null, progressPercent:null} : {format})
+      }}>
         {Object.entries(formats).map(([key, text]) => <option value={key} key={key}>{text}</option>)}
       </select></label>
       <div className="jr-field"><span>Dias de leitura</span>
@@ -48,6 +57,24 @@ function ReadingEditor({ reading, update }: { reading: Reading; update: (patch: 
         </button>
       </div>
     </div>
+    <label>Data de início<input type="date" min="1000-01-01" max={latestDay} value={reading.started ?? ''}
+      onChange={e=>update({started:e.target.value || null})}/></label>
+    {reading.format === 'audio' ?
+      <label>Progresso do audiobook (%)<input type="number" min={0} max={100} step={1} value={reading.progressPercent ?? ''}
+        onChange={e=>update({progressPercent:e.target.value === '' ? null : e.target.valueAsNumber})}/></label> :
+      <div className="jr-progress">
+        <div className="jr-two">
+          <label>Página atual<input type="number" min={0} max={reading.totalPages ?? undefined} value={reading.currentPage ?? ''} onChange={e=>{
+            const currentPage = e.target.value === '' ? null : e.target.valueAsNumber
+            update({currentPage, progressPercent:pageProgress(currentPage,reading.totalPages)})
+          }}/></label>
+          <label>Total de páginas<input type="number" min={1} value={reading.totalPages ?? ''} onChange={e=>{
+            const totalPages = e.target.value === '' ? null : e.target.valueAsNumber
+            update({totalPages, progressPercent:pageProgress(reading.currentPage,totalPages)})
+          }}/></label>
+        </div>
+        {reading.progressPercent != null && <p aria-live="polite">Progresso da leitura · {reading.progressPercent}%</p>}
+      </div>}
     {calendarShown && <Calendar month={month} onMonth={setMonth} selected={days} onDay={toggleDay}
       latestDay={latestDay} />}
     {isComplete && <div className="jr-completion">
@@ -67,16 +94,18 @@ function ReadingEditor({ reading, update }: { reading: Reading; update: (patch: 
   </div>
 }
 
-export function BookDialog({ book, ownerKey, initialReadingId, onClose, onSave }: Props) {
+export function BookDialog({ book, ownerKey, initialReadingId, onClose, onSave, onEdit, onDelete }: Props) {
   const key = draftKey(ownerKey, book.id)
   const [draft] = useState(() => readDraft(key, book.id))
   const [outdated, setOutdated] = useState(Boolean(draft && draft.base.revision !== book.revision))
-  const [base] = useState(book)
+  const [base, setBase] = useState(book)
   const [value, setValue] = useState(() => draft && !outdated ? draft.book : book)
   const [selectedId, setSelectedId] = useState(initialReadingId ?? draft?.readingId ?? value.readings.at(-1)?.id ?? '')
   const [tag, setTag] = useState('')
   const [planYear, setPlanYear] = useState(() => String(new Date().getFullYear()))
   const [busy, setBusy] = useState(false)
+  const [panel, setPanel] = useState<'reading'|'edit'|'delete'>('reading')
+  const manageTrigger = useRef<HTMLButtonElement | null>(null)
   const [error, setError] = useState('')
   const [message, setMessage] = useState(draft && !outdated ? 'Rascunho recuperado neste aparelho.' : '')
   const dialog = useRef<HTMLDialogElement>(null)
@@ -93,15 +122,32 @@ export function BookDialog({ book, ownerKey, initialReadingId, onClose, onSave }
       if (previous instanceof HTMLElement && previous.isConnected) previous.focus()
     }
   }, [])
-  function edit(next: Book, id = selected?.id ?? '') {
+  function edit(next: Book, id = selected?.id ?? '', original = base) {
     setValue(next)
     setError('')
     try {
-      localStorage.setItem(key, JSON.stringify({ base, book: next, readingId: id }))
+      localStorage.setItem(key, JSON.stringify({ base:original, book: next, readingId: id }))
       setMessage('Rascunho salvo neste aparelho.')
     } catch {
       setMessage('Armazenamento local indisponível. Mantenha a ficha aberta até salvar.')
     }
+  }
+  function backToReading() {
+    setPanel('reading')
+    requestAnimationFrame(()=>manageTrigger.current?.focus())
+  }
+  const editMetadata:EditBook = async (original, metadata, file) => {
+    const saved = await onEdit(original,metadata,file)
+    const next = {...value, title:saved.title, author:saved.author, coverUrl:saved.coverUrl, revision:saved.revision}
+    setBase(saved)
+    if (JSON.stringify(value) !== JSON.stringify(base)) edit(next, selected?.id, saved)
+    else { setValue(saved); setMessage('Dados do livro atualizados.') }
+    backToReading()
+    return saved
+  }
+  const deleteBook:DeleteBook = async original => {
+    await onDelete(original)
+    try { localStorage.removeItem(key) } catch { /* A exclusão da estante já foi concluída. */ }
   }
   function changeStatus(status: Book['status']) {
     const next = setStatus(value, status)
@@ -132,6 +178,8 @@ export function BookDialog({ book, ownerKey, initialReadingId, onClose, onSave }
   }
   async function save() {
     if (busy || outdated) return
+    const validation = value.readings.map(readingProblem).find(Boolean)
+    if (validation) { setError(validation); return }
     if (value.readings.some(r => r.review.length > 30000)) {
       setError('A união dos rascunhos ultrapassou 30.000 caracteres. Revise o texto antes de salvar.')
       return
@@ -153,11 +201,12 @@ export function BookDialog({ book, ownerKey, initialReadingId, onClose, onSave }
     }
   }
   return <dialog className="jr-dialog" ref={dialog} aria-labelledby="jr-book-title"
-    onCancel={event => { event.preventDefault(); if (!busy) onClose() }}>
+    onCancel={event => { event.preventDefault(); if (!busy) { if(panel === 'reading') onClose(); else backToReading() } }}>
+    {panel !== 'reading' ? <BookManagement book={base} action={panel} busy={busy} setBusy={setBusy} onEdit={editMetadata}
+      onDelete={deleteBook} onBack={backToReading}/> :
     <form className="jr-sheet" onSubmit={event => { event.preventDefault(); void save() }}>
       <header className="jr-book-head">
-        <div className="jr-head-art" aria-hidden="true">{value.coverUrl
-          ? <img src={value.coverUrl} alt="" /> : <span>{value.title[0]}</span>}</div>
+        <div className="jr-head-art" aria-hidden="true"><BookCover title={value.title} coverUrl={value.coverUrl}/></div>
         <div><p>Ficha do livro</p><h2 id="jr-book-title">{value.title}</h2><span>{value.author}</span></div>
         <button className="jr-close" type="button" aria-label="Fechar ficha" disabled={busy} onClick={onClose}>×</button>
       </header>
@@ -173,6 +222,10 @@ export function BookDialog({ book, ownerKey, initialReadingId, onClose, onSave }
         </section>}
         <fieldset className="jr-fields" disabled={busy || outdated}>
           <legend className="jr-sr">Organização e leitura</legend>
+          <div className="book-actions">
+            <button type="button" ref={manageTrigger} onClick={()=>setPanel('edit')}>Editar livro</button>
+            <button type="button" onClick={()=>setPanel('delete')}>Excluir livro</button>
+          </div>
           <div className="jr-two">
             <label>Situação na estante<select value={value.status} onChange={event => changeStatus(event.target.value as Book['status'])}>
               {Object.entries(statuses).map(([key, label]) => <option value={key} key={key}>{label}</option>)}
@@ -193,6 +246,7 @@ export function BookDialog({ book, ownerKey, initialReadingId, onClose, onSave }
           {selected && <section className="jr-record">
             <div className="jr-record-title"><h3>{value.readings.length > 1 ? 'Minhas leituras' : 'Minha leitura'}</h3>
               {value.status === 'read' && <button type="button" className="jr-link" onClick={() => changeStatus('rereading')}>Iniciar releitura</button>}
+              {value.status === 'abandoned' && <button type="button" className="jr-link" onClick={() => changeStatus(value.readings.some(r=>r.finished) ? 'rereading' : 'reading')}>Retomar leitura</button>}
             </div>
             {value.readings.length > 1 && <label>Ficha da leitura<select value={selected.id} onChange={e => setSelectedId(e.target.value)}>
               {value.readings.map((r, index) => <option key={r.id} value={r.id}>{index + 1}ª leitura · {r.finished ? formattedDate(r.finished) : 'Em andamento'}</option>)}
@@ -204,6 +258,6 @@ export function BookDialog({ book, ownerKey, initialReadingId, onClose, onSave }
       </div>
       <footer className="jr-footer"><span role="status">{message}</span><button className="jr-primary" disabled={busy || outdated}
         type="submit">{busy ? 'Salvando…' : 'Salvar ficha'}</button></footer>
-    </form>
+    </form>}
   </dialog>
 }

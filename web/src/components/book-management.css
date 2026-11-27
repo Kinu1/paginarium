@@ -1,0 +1,96 @@
+.cover-editor {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.cover-editor legend {
+  margin-bottom: 0.65rem;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+.cover-editor-row {
+  display: grid;
+  grid-template-columns: 4.5rem minmax(0, 1fr);
+  align-items: start;
+  gap: 0.9rem;
+}
+.cover-preview {
+  overflow: hidden;
+  border-radius: 0.3rem;
+  background: #e8e3d9;
+  aspect-ratio: 2 / 3;
+}
+.cover-preview .book-cover,
+.jr-head-art .book-cover {
+  display: block;
+  height: 100%;
+  width: 100%;
+}
+.cover-inputs {
+  display: grid;
+  gap: 0.35rem;
+}
+.cover-inputs small {
+  color: #51616b;
+  font-size: 0.78rem;
+}
+.cover-inputs label:not(:first-child) {
+  margin-top: 0.5rem;
+}
+.cover-inputs input {
+  min-width: 0;
+  max-width: 100%;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid #d6d2c9;
+  border-radius: 0.45rem;
+  background: #fffdf8;
+  font-size: 0.9rem;
+}
+.cover-actions,
+.book-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.9rem;
+}
+.cover-actions button,
+.book-actions button {
+  padding: 0.4rem 0;
+  min-height: 2.5rem;
+  color: #213d51;
+  background: transparent;
+  border: 0;
+  font-size: 0.85rem;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+.book-actions {
+  border-bottom: 1px solid #d9d5ca;
+  padding-bottom: 0.45rem;
+}
+.book-actions button:last-child,
+.cover-actions button:first-child {
+  color: #764437;
+}
+.jr-primary.delete-book {
+  background: #723e34;
+  border-color: #723e34;
+}
+.jr-progress {
+  display: grid;
+  gap: 0.35rem;
+}
+.jr-progress p {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #49605d;
+}
+.shelf-progress {
+  display: block;
+  margin: 0.3rem 0 0.6rem;
+  font-size: 0.85rem;
+}
+.book-status.st-abandoned {
+  color: #795641;
+}

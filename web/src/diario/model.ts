@@ -5,7 +5,7 @@ export const formats: Record<Reading['format'], string> = {
 }
 
 export const statuses: Record<Book['status'], string> = {
-  want: 'Quero ler', reading: 'Lendo', rereading: 'Relendo', read: 'Lido',
+  want: 'Quero ler', reading: 'Lendo', rereading: 'Relendo', read: 'Lido', abandoned: 'Abandonado',
 }
 
 export function dateKey(date = new Date()) {
@@ -33,9 +33,10 @@ export function setStatus(book: Book, status: Book['status'], today = dateKey())
   const hasFinished = book.readings.some(reading => Boolean(reading.finished))
   const starting = status === 'reading' || status === 'rereading'
   let readings = book.readings
-  if ((starting && !current) || (status === 'read' && !current && !hasFinished)) {
+  if (((starting || status === 'abandoned') && !current) || (status === 'read' && !current && !hasFinished)) {
     const reading: Reading = {
       id: crypto.randomUUID(), format: 'physical', days: [], finished: status === 'read' ? today : null,
+      started: starting ? today : null, currentPage: null, totalPages: null, progressPercent: null,
       rating: null, favorite: false, review: '',
     }
     readings = [...readings, reading]

@@ -28,7 +28,7 @@ const sample = (r) => ({
 });
 
 test("aceita mês de conclusão sem dias e distingue nota zero, meia-lua e ausência de nota", () => {
-  for (const rating of [null, 0, 4.5, 5]) {
+  for (const rating of [null, 0, 0.25, 4.5, 4.75, 5]) {
     const row = parse(updateBook, sample({ ...reading, days: [], rating }))
       .readings[0];
     assert.equal(row.finished, "2024-03");
@@ -41,7 +41,7 @@ test("mantém datas não consecutivas, rejeita datas inexistentes e notas fora d
   for (const changes of [
     { days: ["2025-02-29"] },
     { days: ["2024-03-02", "2024-03-02"] },
-    { rating: 4.75 },
+    { rating: 4.1 },
     { finished: "2025-13" },
     { rating: 6 },
     { days: ["2024-04-01"] },

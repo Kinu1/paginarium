@@ -12,7 +12,7 @@
     "dev": "npm run build && npm start",
     "test": "npm run build && node --test test/*.test.mjs",
     "migrate": "prisma migrate deploy",
-    "test:db": "npm run build && node --test test/postgres.integration.mjs"
+    "test:db": "npm run build && node --test test/*.integration.mjs"
   },
   "dependencies": {
     "@nestjs/common": "11.2.12",
@@ -25,6 +25,7 @@
     "helmet": "^8.1.0",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.2",
+    "sharp": "0.35.5",
     "zod": "4.6.7"
   },
   "devDependencies": {

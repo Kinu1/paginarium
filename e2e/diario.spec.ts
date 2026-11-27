@@ -47,12 +47,13 @@ test('salva no PostgreSQL, recupera o rascunho offline e sincroniza com um segun
   await expect(dialog).toHaveCount(0);
   await page.getByRole('button',{name:/Abrir Um livro de teste/}).click();
   await dialog.getByRole('button',{name:'Iniciar releitura'}).click();
+  await dialog.getByLabel('Data de início').fill('2025-10-01');
   await dialog.getByLabel('Formato da leitura').selectOption('audio');
   await dialog.getByLabel('Situação na estante').selectOption('read');
   await dialog.getByLabel('Data de conclusão').fill('2025-10-20');
   const slider=dialog.getByRole('slider');
   await slider.focus(); await slider.press('End'); await slider.press('ArrowLeft');
-  await expect(slider).toHaveAttribute('aria-valuetext','4,5 de 5 luas');
+  await expect(slider).toHaveAttribute('aria-valuetext','4,75 de 5 luas');
   await dialog.getByLabel('Minha resenha').fill('Ouvi o livro pela segunda vez.');
   await dialog.getByRole('button',{name:'Salvar ficha'}).click();
   await expect(dialog).toHaveCount(0);
@@ -60,14 +61,14 @@ test('salva no PostgreSQL, recupera o rascunho offline e sincroniza com um segun
   try {
     const mobile = await phone.newPage();
     await login(mobile,user);
-    await mobile.getByRole('button',{name:'Histórico',exact:true}).click();
+    await mobile.getByRole('navigation',{name:'Navegação no celular'}).getByRole('button',{name:'Histórico',exact:true}).click();
     await mobile.getByLabel('Ano',{exact:true}).selectOption('2025');
     await expect(mobile.getByRole('heading',{name:'1 livro lido'})).toBeVisible();
     await expect(mobile.getByText('2 leituras no período')).toBeVisible();
     await mobile.getByLabel('Mês',{exact:true}).selectOption('01');
     await expect(mobile.getByLabel('0 de 5 luas',{exact:true})).toBeVisible();
     await mobile.getByLabel('Mês',{exact:true}).selectOption('10');
-    await expect(mobile.getByLabel('4,5 de 5 luas',{exact:true})).toBeVisible();
+    await expect(mobile.getByLabel('4,75 de 5 luas',{exact:true})).toBeVisible();
   } finally {await phone.close();}
   const other = await account(request);
   const list=await request.get(api+'/books',{headers:{Authorization:'Bearer '+other.idToken}});
