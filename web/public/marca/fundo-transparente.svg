@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg">
+  <filter id="fundo" color-interpolation-filters="sRGB">
+    <!-- O canal vermelho distingue os traços marfim do fundo azul dos ícones. -->
+    <feColorMatrix in="SourceGraphic" type="matrix" values="
+      0 0 0 0 0
+      0 0 0 0 0
+      0 0 0 0 0
+      6 0 0 0 -0.8" result="mascara"/>
+    <feComposite in="SourceGraphic" in2="mascara" operator="in"/>
+  </filter>
+</svg>
