@@ -3,7 +3,11 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { fixture } from "./fixtures/challenge-db.mjs";
 import { CommunityService } from "../dist/community/community.service.js";
-import { clearBookLinks } from "../dist/book-links.js";
+import { BooksController } from "../dist/controllers.js";
+import { LibraryService } from "../dist/library.service.js";
+import { CompetitionService } from "../dist/competition/competition.service.js";
+import { updateYear } from "../dist/validation.js";
+import { progressSchema } from "../dist/community/rules.js";
 
 test("publica só regras e a cópia editável nasce privada e independente", async () => {
   const { db, owner, other, books, foreign, close } = await fixture();
@@ -25,9 +29,9 @@ test("publica só regras e a cópia editável nasce privada e independente", asy
       svc.edit(owner, item.id, item.revision, rules, { 1: foreign.id }),
       (e) => e.getStatus() === 404,
     );
-    item = await svc.edit(owner, item.id, item.revision, rules, {
-      1: books[0],
-    });
+    item = await svc.edit(owner, item.id, item.revision, rules,
+      progressSchema.parse({ 1: books[0].toUpperCase() }),
+    );
     await assert.rejects(
       svc.publication(other, item.id, item.revision, true),
       (e) => e.getStatus() === 404,
@@ -55,8 +59,6 @@ test("publica só regras e a cópia editável nasce privada e independente", asy
       svc.edit(owner, item.id, item.revision - 1, rules, {}),
       (e) => e.getStatus() === 409,
     );
-    await db.$transaction((tx) => clearBookLinks(tx, owner, books[0]));
-    assert.deepEqual((await svc.mine(owner)).find(challenge => challenge.id === item.id).progress, {});
     const tournamentRules = { ...rules, format: "competition", items: [] };
     const model = await svc.create(owner, tournamentRules);
     const tournament = await svc.startCompetition(
@@ -75,7 +77,19 @@ test("publica só regras e a cópia editável nasce privada e independente", asy
       svc.startCompetition(owner, model.id, model.revision + 1, books),
       (e) => e.getStatus() === 409,
     );
+    const library = new LibraryService(db);
+    const upper = books[0].toUpperCase();
+    await library.saveYear(owner, 2026, updateYear.parse({
+      revision: 0, squares: { meta: upper }, letters: {}, colors: {}, monthly: {}, rounds: {},
+    }));
+    await new BooksController(library).remove(owner, upper, "1");
+    const after = await new CompetitionService(db).get(owner, tournament.id);
+    assert.equal(after.slots[tournament.slots.indexOf(books[0])], null);
+    assert.equal(after.slots.filter(Boolean).length, 21);
+    assert.deepEqual((await library.year(owner, 2026)).squares, {});
+    assert.deepEqual((await svc.mine(owner)).find(challenge => challenge.id === item.id).progress, {});
   } finally {
+    await db.journalYear.deleteMany({ where: { owner } });
     await db.personalChallenge.deleteMany({
       where: { owner: { in: [owner, other] } },
     });
