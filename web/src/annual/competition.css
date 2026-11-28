@@ -1,0 +1,8 @@
+.tournament {margin-block:1.2rem 2rem}
+.tournament form,.tournament > label,.tournament form > label {display:grid;gap:.55rem}
+.tournament :is(input:not([type=checkbox]),select) {padding:.6rem;border:1px solid #c6c5bd;border-radius:.5rem;background:#fffcf7;color:inherit;max-width:100%}
+.tournament fieldset {border:1px solid #d3cec2;border-radius:.6rem;padding:1rem}
+.competition-picks {display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,13rem),1fr));gap:.4rem}
+.competition-picks label {display:flex;align-items:center;gap:.5rem;min-height:2.5rem}
+.tournament form > button {justify-self:start}
+.competition-pending {display:grid;place-items:center;color:#52616b;border:1px dashed #c6c5bd;border-radius:.5rem;padding:.8rem}

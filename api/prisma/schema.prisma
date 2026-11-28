@@ -68,3 +68,16 @@ model JournalYear {
 
   @@id([owner, year])
 }
+
+model Competition {
+  id          String   @id @default(uuid()) @db.Uuid
+  owner       String
+  name        String
+  challengeId String?  @unique @db.Uuid
+  revision    Int      @default(1)
+  slots       Json
+  votes       Json
+  createdAt   DateTime @default(now())
+
+  @@index([owner, createdAt])
+}

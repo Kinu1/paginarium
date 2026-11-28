@@ -3,13 +3,14 @@ import { Check, Heart, Trophy } from 'lucide-react';
 import type { Book, YearState } from '../../../shared/contracts';
 import type { Journal } from '../data';
 import { BookCover } from '../components/BookCover';
+import { CompetitionPanel } from './Competition';
 import { bracket, colors, inMonth, letters, months, squares } from './model';
 import './annual.css';
 
 type Props = {books: Book[]; journal: Journal};
 type Group = keyof Omit<YearState,'revision'>;
-type Category = 'Bingo' | 'De A a Z' | 'Arco-íris' | 'Favoritos';
-const categories: Category[] = ['Bingo','De A a Z','Arco-íris','Favoritos'];
+type Category = 'Bingo' | 'De A a Z' | 'Arco-íris' | 'Favoritos' | 'Competição';
+const categories: Category[] = ['Bingo','De A a Z','Arco-íris','Favoritos','Competição'];
 
 function AnnualBook({book}: {book: Book}) {
   return <span className="an-book">
@@ -66,7 +67,7 @@ function YearJournal({books,journal,year}:Props & {year:number}) {
   return <>
     <nav aria-label="Desafios anuais" className="an-tabs">{categories.map(c=><button key={c} aria-pressed={category===c} onClick={()=>{setCategory(c);setSelection(null)}}>{c}</button>)}</nav>
     {error && <p role="alert">{error} <button onClick={()=>{setSelection(null);setReload(n=>n+1)}}>Atualizar o diário</button></p>}
-    {category!=='Favoritos' ? <>
+    {category==='Competição' ? <CompetitionPanel books={books}/> : category!=='Favoritos' ? <>
       <div className="an-heading"><h2>{category==='Bingo'?'Bingo literário':category==='De A a Z'?'Um título por letra':'Arco-íris de capas'}</h2><span>{Object.keys(state[group]).length} de {category==='Bingo'?24:items.length}</span></div>
       <div className={'an-grid an-'+group}>{items.map((label,i)=>{
         const key=group==='squares'?String(i):label, value=state[group][key];

@@ -1,5 +1,6 @@
 import { Prisma } from "./generated/prisma/client.js";
 import { NotFoundException } from "@nestjs/common";
+import { clearCompetitionBook } from "./competition/book-link.js";
 
 type Transaction = Prisma.TransactionClient;
 const groups = ["squares", "letters", "colors", "monthly", "rounds"] as const;
@@ -48,4 +49,5 @@ export async function clearBookLinks(
         data: { ...clean, revision: { increment: 1 } },
       });
   }
+  await clearCompetitionBook(tx, owner, bookId);
 }
