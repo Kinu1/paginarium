@@ -61,7 +61,7 @@ test('salva no PostgreSQL, recupera o rascunho offline e sincroniza com um segun
   try {
     const mobile = await phone.newPage();
     await login(mobile,user);
-    await mobile.getByRole('navigation',{name:'Navegação no celular'}).getByRole('button',{name:'Histórico',exact:true}).click();
+    await mobile.getByRole('navigation',{name:'Navegação no celular'}).getByRole('button',{name:'Lidos',exact:true}).click();
     await mobile.getByLabel('Ano',{exact:true}).selectOption('2025');
     await expect(mobile.getByRole('heading',{name:'1 livro lido'})).toBeVisible();
     await expect(mobile.getByText('2 leituras no período')).toBeVisible();

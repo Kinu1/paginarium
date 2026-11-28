@@ -1,0 +1,52 @@
+import { expect, test } from '@playwright/test'
+
+for (const width of [390, 1440]) {
+  test.describe(`Diário em ${width}px`, () => {
+    test.use({ viewport: { width, height: 844 } })
+    test('separa as conclusões dos dias e conserva os filtros das duas telas', async ({ page }) => {
+      await page.clock.setFixedTime(new Date('2026-09-15T12:00:00Z'))
+      await page.goto('/')
+      const nav = page.getByRole('navigation', {name: width === 390 ? 'Navegação no celular' : 'Navegação principal'})
+      const lidos = nav.getByRole('button', { name: width === 390 ? 'Lidos' : 'Livros lidos', exact: true })
+      const calendario = nav.getByRole('button', { name: width === 390 ? 'Calendário' : 'Dias de leitura', exact: true })
+      await lidos.click()
+      await page.getByLabel('Formato', { exact: true }).selectOption('audio')
+      await calendario.click()
+      await expect(page.getByLabel('Formato', { exact: true })).toHaveValue('')
+      const date = page.getByRole('button', { name: '1 de setembro de 2026, com atividade' })
+      await expect(date).toHaveText('1')
+      await date.click()
+      await expect(page.getByLabel('Mês', { exact: true })).toHaveValue('09')
+      await expect(page.getByRole('heading', { name: '1 de setembro de 2026' })).toBeVisible()
+      await expect(page.getByRole('button', { name: /O atlas das marés/ })).toBeVisible()
+      await expect(page.getByRole('button', { name: /A casa das peônias/ })).toBeVisible()
+      await lidos.click()
+      await expect(page.getByLabel('Formato', { exact: true })).toHaveValue('audio')
+      await expect(page.getByLabel('Mês', { exact: true })).toHaveValue('')
+      await calendario.click()
+      await expect(page.getByLabel('Mês', { exact: true })).toHaveValue('09')
+      expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width)
+      await page.getByLabel('Formato', { exact: true }).selectOption('ebook')
+      await date.click()
+      await page.getByRole('button', { name: /A casa das peônias/ }).click()
+      const ficha = page.getByRole('dialog')
+      await ficha.getByRole('button', { name: '1 dia registrado', exact: true }).click()
+      await ficha.getByRole('button', { name: '1 de setembro de 2026', exact: true }).click()
+      await ficha.getByRole('button', { name: 'Salvar ficha' }).click()
+      await expect(page.getByRole('heading', { name: 'Sem atividade neste mês' })).toBeVisible()
+    })
+    test('mostra a marca no centro livre e a capa nas casas do bingo e do A–Z', async ({ page }) => {
+      await page.goto('/')
+      await page.getByRole('button', { name: 'Desafios', exact: true }).click()
+      await expect(page.locator('.an-free')).toHaveText('Paginarium')
+      await expect(page.locator('.an-free img')).toHaveAttribute('src', '/marca/icone.png')
+      for (const [tab, tile] of [['Bingo','Autoria brasileira'], ['De A a Z','A']]) {
+        await page.getByRole('button', { name: tab, exact: true }).click()
+        await page.getByRole('button', { name: tile, exact: true }).click()
+        await page.getByLabel('Vincular um livro da estante').selectOption({ label: 'O atlas das marés' })
+        const filled = page.locator('.an-cell.chosen').filter({ hasText: 'O atlas das marés' })
+        await expect(filled.locator('img')).toHaveAttribute('src', '/capas/atlas.jpg')
+      }
+    })
+  })
+}

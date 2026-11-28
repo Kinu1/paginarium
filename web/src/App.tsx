@@ -26,13 +26,14 @@ import { Shelf } from './components/Shelf'
 import { Button } from './components/ui/button'
 
 const pages = [
-  { id: 'shelf', label: 'Estante', icon: LibraryBig },
-  { id: 'history', label: 'Histórico', icon: HistoryIcon },
-  { id: 'annual', label: 'Desafios', icon: Trophy },
+  { id: 'shelf', label: 'Estante', short: 'Estante', icon: LibraryBig },
+  { id: 'history', label: 'Livros lidos', short: 'Lidos', icon: HistoryIcon },
+  { id: 'activity', label: 'Dias de leitura', short: 'Calendário', icon: CalendarDays },
+  { id: 'annual', label: 'Desafios', short: 'Desafios', icon: Trophy },
 ] as const
 type Page = (typeof pages)[number]['id']
 type Scope = 'all' | 'planned' | 'favorites'
-const titles: Record<Page, string> = { shelf: 'Minha estante', history: 'Histórico', annual: 'Desafios' }
+const titles: Record<Page, string> = { shelf: 'Minha estante', history: 'Livros lidos', activity: 'Dias de leitura', annual: 'Desafios' }
 const dateLabel = new Intl.DateTimeFormat('pt-BR', {
   day: 'numeric',
   month: 'long',
@@ -284,15 +285,17 @@ function Workspace({ user, onAccount }: { user: User | null; onAccount: () => vo
             </div>
           ) : page === 'shelf' ? (
             <Shelf key={scope} books={books} scope={scope} onOpen={openBook} onAdd={openCatalog} />
-          ) : page === 'history' ? (
-            <History books={books} onOpen={openBook} />
-          ) : (
+          ) : page === 'annual' ? (
             <Annual books={books} journal={journal} />
-          )}
+          ) : null}
+          {!loading && !error && <>
+            <div hidden={page !== 'history'}><History mode="finished" books={books} onOpen={openBook} visible={page === 'history'} /></div>
+            <div hidden={page !== 'activity'}><History mode="activity" books={books} onOpen={openBook} visible={page === 'activity'} /></div>
+          </>}
         </div>
       </main>
       <nav className="mobile-nav" aria-label="Navegação no celular">
-        {pages.map(({ id, label, icon: Icon }) => (
+        {pages.map(({ id, short, icon: Icon }) => (
           <button
             type="button"
             key={id}
@@ -300,7 +303,7 @@ function Workspace({ user, onAccount }: { user: User | null; onAccount: () => vo
             onClick={() => navigate(id)}
           >
             <Icon size={20} />
-            {label}
+            {short}
           </button>
         ))}
       </nav>

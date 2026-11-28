@@ -119,7 +119,7 @@ for (const scope of ['demonstração', 'conta privada'] as const) {
       'src',
       scope === 'conta privada' ? /^blob:/ : /^data:image\/jpeg;/,
     )
-    await page.getByRole('navigation', {name:'Navegação no celular'}).getByRole('button', { name: 'Histórico', exact: true }).click()
+    await page.getByRole('navigation', {name:'Navegação no celular'}).getByRole('button', { name: 'Lidos', exact: true }).click()
     await page.getByLabel('Avaliação', { exact: true }).selectOption('4.75')
     const historyBook = page.getByRole('button', { name: /Caderno do mar/ })
     await expect(historyBook.locator('img')).toBeVisible()
