@@ -18,7 +18,7 @@ import type { Book, CatalogBook } from '../../shared/contracts'
 import { auth, authMessage } from './auth'
 import { ConflictError, createJournal, type BookMetadata } from './data'
 import { CoverContext } from './components/BookCover'
-import { Annual } from './annual'
+import { Challenges } from './annual/Challenges'
 import { BookDialog, History } from './diario'
 import { AccountDialog } from './components/AccountDialog'
 import { CatalogDialog } from './components/CatalogDialog'
@@ -286,7 +286,7 @@ function Workspace({ user, onAccount }: { user: User | null; onAccount: () => vo
           ) : page === 'shelf' ? (
             <Shelf key={scope} books={books} scope={scope} onOpen={openBook} onAdd={openCatalog} />
           ) : page === 'annual' ? (
-            <Annual books={books} journal={journal} />
+            <Challenges books={books} journal={journal} onAccount={onAccount} />
           ) : null}
           {!loading && !error && <>
             <div hidden={page !== 'history'}><History mode="finished" books={books} onOpen={openBook} visible={page === 'history'} /></div>

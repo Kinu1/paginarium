@@ -28,6 +28,8 @@ O Compose inicia quatro serviços. O site e a API usam as portas locais 5173 e 3
 - Escrever resenhas com rascunho local, avaliar em passos de 0,25 lua, favoritar e iniciar releituras. Uma conclusão antiga pode registrar apenas mês e ano.
 - Explorar o histórico por período, formato, tags, nota e favoritos. No calendário, cada dia de atividade mostra os livros lidos.
 - Preencher bingo, desafios de A a Z e arco-íris, escolher favoritos mensais e comparar as capas nas rodadas do favorito anual.
+- Sortear uma competição com 22 livros da estante e votar nas capas até escolher um campeão.
+- Criar desafios nos cinco formatos, publicar suas regras e copiar modelos da comunidade. Cada pessoa preenche a própria cópia com os livros da sua estante.
 
 ## Como as partes se conectam
 

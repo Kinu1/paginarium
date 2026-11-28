@@ -81,3 +81,17 @@ model Competition {
 
   @@index([owner, createdAt])
 }
+
+model PersonalChallenge {
+  id           String    @id @default(uuid()) @db.Uuid
+  owner        String
+  format       String
+  rules        Json
+  progress     Json
+  revision     Int       @default(1)
+  published    Boolean   @default(false)
+  createdAt    DateTime  @default(now())
+
+  @@index([owner, createdAt])
+  @@index([published, format, createdAt])
+}
