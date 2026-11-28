@@ -59,7 +59,7 @@ export function History({ books, onOpen, mode, visible }: { books: Book[]; onOpe
   }
   const monthKey = filter.year + '-' + filter.month
   const activities = activityByDay(mode === 'activity' && filter.month ? books : [], filter, monthKey)
-  const selectedDay = activeDay || [...activities.keys()].sort().at(-1) || ''
+  const selectedDay = activities.has(activeDay) ? activeDay : [...activities.keys()].sort().at(-1) ?? ''
   const dayEntries = activities.get(selectedDay) ?? []
   const filtered = filter.tags.length > 0 || Boolean(filter.rating || filter.format || filter.favorite || filter.month)
   return <section className="jr-history" aria-label={mode === 'finished' ? 'Conclusões' : 'Atividade de leitura'}>
